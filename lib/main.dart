@@ -34,6 +34,8 @@ class _MyHomePageState extends State<MyHomePage> {
         books = data.map<Map<String, dynamic>>((book) => {
           'title': _safeConvertToString(book['title']),
           'author': _safeConvertToString(book['author']),
+          'cover_url': _safeConvertToString(book['cover_url']),
+          'download_url': _safeConvertToString(book['download_url']),
         }).toList();
       });
     } catch (error) {
@@ -45,7 +47,7 @@ class _MyHomePageState extends State<MyHomePage> {
     if (value is String) {
       return value;
     } else if (value == null) {
-      return 'Sem título';
+      return 'Informação não disponível';
     } else {
       return value.toString();
     }
@@ -66,9 +68,24 @@ class _MyHomePageState extends State<MyHomePage> {
       body: ListView.builder(
         itemCount: books.length,
         itemBuilder: (context, index) {
-          return ListTile(
-            title: Text('Título: ${books[index]['title']}'),
-            subtitle: Text('Autor: ${books[index]['author']}'),
+          return Card(
+            margin: EdgeInsets.all(8.0),
+            child: ListTile(
+              title: Text('Título: ${books[index]['title']}'),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Autor: ${books[index]['author']}'),
+                  Image.network(
+                    books[index]['cover_url'],
+                    height: 100.0,
+                    width: 100.0,
+                  ),
+                  SizedBox(height: 8.0),
+                  Text('Download URL: ${books[index]['download_url']}'),
+                ],
+              ),
+            ),
           );
         },
       ),
