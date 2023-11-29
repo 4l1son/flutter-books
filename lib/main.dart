@@ -1,7 +1,8 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
+import 'dart:io';
+
 
 void main() {
   runApp(MyApp());
@@ -28,6 +29,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   List<Map<String, dynamic>> books = [];
   List<Map<String, dynamic>> favoriteBooks = [];
+  List<File> downloadedBookCovers = [];
 
   Future<void> fetchBooks() async {
     try {
@@ -40,7 +42,7 @@ class _MyHomePageState extends State<MyHomePage> {
           'author': _safeConvertToString(book['author']),
           'cover_url': _safeConvertToString(book['cover_url']),
           'download_url': _safeConvertToString(book['download_url']),
-          'isFavorite': false, // Adicionado indicador de favorito
+          'isFavorite': false,
         }).toList();
       });
     } catch (error) {
@@ -71,8 +73,30 @@ class _MyHomePageState extends State<MyHomePage> {
       File file = File('${dir.path}/$title.epub');
       await file.writeAsBytes(response.data!, flush: true);
 
+      // Adiciona a capa à lista de capas baixadas
+      downloadedBookCovers.add(file);
+
       // Mostrar uma mensagem de sucesso ou navegar para a visualização do livro.
       print('Livro baixado com sucesso: ${file.path}');
+
+      // Exibir um alerta
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Download Concluído'),
+            content: Text('O livro foi baixado com sucesso!'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
     } catch (error) {
       print('Erro ao baixar o livro: $error');
     }
@@ -136,47 +160,65 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Widget _buildBooksList(List<Map<String, dynamic>> bookList) {
-    return ListView.builder(
-      itemCount: bookList.length,
-      itemBuilder: (context, index) {
+Widget _buildBooksList(List<Map<String, dynamic>> bookList) {
+  double screenWidth = MediaQuery.of(context).size.width;
+  int columns = (screenWidth / 160.0).floor(); // Adjust 160.0 as needed for the minimum width
+
+  return Container(
+    padding: EdgeInsets.all(8.0),
+    child: Wrap(
+      spacing: 16.0,
+      runSpacing: 16.0,
+      children: bookList.map((book) {
         return Card(
-          margin: EdgeInsets.all(8.0),
-          child: ListTile(
-            title: Text('Título: ${bookList[index]['title']}'),
-            subtitle: Column(
+          child: Container(
+            width: screenWidth / columns - 16.0, // Adjust spacing
+            padding: EdgeInsets.all(8.0),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Autor: ${bookList[index]['author']}'),
-                Image.network(
-                  bookList[index]['cover_url'],
-                  height: 100.0,
-                  width: 100.0,
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        _downloadBook(
+                          book['download_url'],
+                          book['title'],
+                        );
+                      },
+                      child: Image.network(
+                        book['cover_url'],
+                        height: 120.0,
+                        width: 120.0,
+                      ),
+                    ),
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: IconButton(
+                        icon: book['isFavorite']
+                            ? Icon(Icons.favorite)
+                            : Icon(Icons.favorite_border),
+                        onPressed: () {
+                          _toggleFavorite(book['id']);
+                        },
+                      ),
+                    ),
+                  ],
                 ),
                 SizedBox(height: 8.0),
-                Text('Download URL: ${bookList[index]['download_url']}'),
-                ElevatedButton(
-                  onPressed: () {
-                    _downloadBook(
-                      bookList[index]['download_url'],
-                      bookList[index]['title'],
-                    );
-                  },
-                  child: Text('Baixar Livro'),
+                Text(
+                  'Título: ${book['title']}',
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
-                IconButton(
-                  icon: bookList[index]['isFavorite']
-                      ? Icon(Icons.favorite)
-                      : Icon(Icons.favorite_border),
-                  onPressed: () {
-                    _toggleFavorite(bookList[index]['id']);
-                  },
-                ),
+                Text('Autor: ${book['author']}'),
               ],
             ),
           ),
         );
-      },
-    );
-  }
+      }).toList(),
+    ),
+  );
+}
 }
