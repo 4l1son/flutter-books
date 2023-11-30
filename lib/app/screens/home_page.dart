@@ -58,13 +58,10 @@ class _MyHomePageState extends State<MyHomePage> {
       File file = File('${dir.path}/$title.epub');
       await file.writeAsBytes(response.data!, flush: true);
 
-      // Adiciona a capa à lista de capas baixadas
       downloadedBookCovers.add(file);
 
-      // Mostrar uma mensagem de sucesso ou navegar para a visualização do livro.
       print('Livro baixado com sucesso: ${file.path}');
 
-      // Exibir um alerta
       showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -144,7 +141,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget _buildBooksList(List<Book> bookList) {
     double screenWidth = MediaQuery.of(context).size.width;
-    int columns = (screenWidth / 160.0).floor(); // Ajuste conforme necessário para a largura mínima
+    int columns = (screenWidth / 160.0).floor(); 
 
     return SingleChildScrollView(
       child: Container(
@@ -155,7 +152,7 @@ class _MyHomePageState extends State<MyHomePage> {
           children: bookList.map((book) {
             return Card(
               child: Container(
-                width: screenWidth / columns - 16.0, // Ajuste de espaçamento
+                width: screenWidth / columns - 16.0, 
                 padding: EdgeInsets.all(8.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,20 +161,25 @@ class _MyHomePageState extends State<MyHomePage> {
                       onTap: () {
                         _downloadBook(book.downloadUrl, book.title);
                       },
-                      child: Image.network(
-                        book.coverUrl,
-                        height: 120.0,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
+                      child: Stack(
+                        alignment: Alignment.topRight,
+                        children: [
+                          Image.network(
+                            book.coverUrl,
+                            height: 120.0,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          ),
+                          IconButton(
+                            icon: book.isFavorite
+                                ? Icon(Icons.favorite, color: Colors.red) 
+                                : Icon(Icons.favorite_border),
+                            onPressed: () {
+                              _toggleFavorite(book.id);
+                            },
+                          ),
+                        ],
                       ),
-                    ),
-                    IconButton(
-                      icon: book.isFavorite
-                          ? Icon(Icons.favorite)
-                          : Icon(Icons.favorite_border),
-                      onPressed: () {
-                        _toggleFavorite(book.id);
-                      },
                     ),
                     SizedBox(height: 8.0),
                     Text(
